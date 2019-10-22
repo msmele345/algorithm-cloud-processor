@@ -1,0 +1,21 @@
+spring:
+  cloud:
+    stream:
+      defaultBinder: kafka
+      kafka:
+        binder:
+          brokers: localhost:9092
+          autoCreateTopics: false
+          consumerProperties:
+            key:
+              deserializer: org.apache.kafka.common.serialization.StringDeserializer
+            value:
+              deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      bindings:
+        input:
+          consumer:
+            resetOffsets: true
+            maxAttempts: 1
+          binder: kafka
+          group: "dummy"
+          destination: "algorithm_complete" #topic or exchange
