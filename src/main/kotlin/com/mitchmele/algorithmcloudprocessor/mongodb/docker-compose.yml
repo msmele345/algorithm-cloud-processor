@@ -1,0 +1,19 @@
+version: '3.2'
+services:
+  mongodb-1:
+    image: mongo
+    container_name: mongodb-1
+    hostname: mongodb-1.vnet
+    restart: always
+#      environment:
+#        MONGO_INITDB_ROOT_USERNAME: root
+#        MONGO_INITDB_ROOT_PASSWORD: example
+#    networks:
+#      - vnet
+    ports:
+      - 27017:27017
+
+networks:
+  default:
+    external:
+      name: vnet

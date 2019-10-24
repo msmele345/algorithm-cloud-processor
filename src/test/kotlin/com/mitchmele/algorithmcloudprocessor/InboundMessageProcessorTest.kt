@@ -1,48 +1,41 @@
 package com.mitchmele.algorithmcloudprocessor
 
-import assertk.all
-import assertk.assertThat
-import assertk.assertions.isEqualTo
-import assertk.assertions.isNotNull
+import com.mitchmele.algorithmcloudprocessor.services.MongoClient
+import com.mitchmele.algorithmcloudprocessor.store.AlgorithmDomainModel
+import com.mitchmele.algorithmcloudprocessor.store.Category
+import com.mitchmele.algorithmcloudprocessor.store.Tag
+import com.nhaarman.mockito_kotlin.any
+import com.nhaarman.mockito_kotlin.mock
+import com.nhaarman.mockito_kotlin.verify
 import org.junit.Test
 import org.springframework.integration.support.MessageBuilder
 
 class InboundMessageProcessorTest {
 
-    val subject = InboundMessageProcessor()
+    val mockMongoClient: MongoClient = mock()
+
+    val subject = InboundMessageProcessor(mockMongoClient)
+
+    val incomingAlgorithmDomainModel = AlgorithmDomainModel(
+        name = "countDupes",
+        codeSnippet = """
+            fun countDupes(arr: Array<Int>): Int = arr.size - arr.distinct()
+        """.trimIndent(),
+        category = Category(
+            categoryDescription = "EASY",
+            difficultyLevel = 2,
+            tags = listOf(Tag("Collections"))
+        )
+    )
 
     @Test
-    fun `process - should consume a message`() {
+    fun `process - should consume a message and invoke the mongo client`() {
         val inboundMessage = MessageBuilder
-            .withPayload("some message")
+            .withPayload(incomingAlgorithmDomainModel)
             .setHeader("header1", "some value")
             .build()
 
-        val actual = 1 +1
-
-        assertThat(actual).all {
-            isNotNull()
-            isEqualTo(1)
-        }
+        val actual = subject.process(inboundMessage)
+        verify(mockMongoClient).saveAlgorithm(any())
     }
 }
-
-//Insures all of them get run even if the first fails
-//assertAll {
-//    assertThat(false).isTrue()
-//    assertThat(true).isFalse()
-//}
-// -> The following 2 assertions failed:
-//    - expected to be true
-//    - expected to be false
-
-//EXCEPTIONS:
-//assertThat {
-//    throw Exception("error")
-//}.isFailure().hasMessage("wrong")
-// -> expected [message] to be:<["wrong"]> but was:<["error"]>
-
-//This method also allows you to assert on successfully returned values.
-//
-//assertThat { 1 + 1 }.isSucess().isNegative()
-// -> expected to be negative but was:<2>
