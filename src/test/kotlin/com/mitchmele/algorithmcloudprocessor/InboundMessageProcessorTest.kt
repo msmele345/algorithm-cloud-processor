@@ -1,14 +1,16 @@
 package com.mitchmele.algorithmcloudprocessor
 
+
 import com.mitchmele.algorithmcloudprocessor.services.MongoClient
 import com.mitchmele.algorithmcloudprocessor.store.AlgorithmDomainModel
 import com.mitchmele.algorithmcloudprocessor.store.Category
 import com.mitchmele.algorithmcloudprocessor.store.Tag
-import com.nhaarman.mockito_kotlin.any
-import com.nhaarman.mockito_kotlin.mock
-import com.nhaarman.mockito_kotlin.verify
+import com.nhaarman.mockito_kotlin.*
+import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.assertj.core.api.AssertionsForInterfaceTypes.assertThat
 import org.junit.Test
 import org.springframework.integration.support.MessageBuilder
+import org.springframework.messaging.Message
 
 class InboundMessageProcessorTest {
 
@@ -37,5 +39,24 @@ class InboundMessageProcessorTest {
 
         val actual = subject.process(inboundMessage)
         verify(mockMongoClient).saveAlgorithm(any())
+    }
+
+    @Test
+    fun `process - should throw an exception if the mongo client fails`() {
+
+        val inboundBadMessage = incomingAlgorithmDomainModel.toMessage()
+
+        whenever(mockMongoClient.saveAlgorithm(any())) doThrow RuntimeException("something bad happened")
+
+        assertThatThrownBy {
+            subject.process(inboundBadMessage)
+        }
+            .isInstanceOf(RuntimeException::class.java)
+            .hasMessage("Error with processing")
+    }
+
+
+    private fun AlgorithmDomainModel.toMessage(): Message<*> {
+        return MessageBuilder.withPayload(this).build()
     }
 }

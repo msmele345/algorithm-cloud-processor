@@ -1,22 +1,23 @@
 package com.mitchmele.algorithmcloudprocessor
 
+import com.mitchmele.algorithmcloudprocessor.services.AlgorithmTransformer
+import com.mitchmele.algorithmcloudprocessor.services.JsonToBaseAlgorithmTransformer
+import com.rabbitmq.client.impl.AMQBasicProperties
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.cloud.stream.annotation.EnableBinding
 import org.springframework.cloud.stream.messaging.Sink
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
-import org.springframework.integration.annotation.ServiceActivator
 import org.springframework.integration.channel.DirectChannel
 import org.springframework.integration.config.EnableIntegration
 import org.springframework.integration.core.MessagingTemplate
 import org.springframework.integration.dsl.IntegrationFlow
 import org.springframework.integration.dsl.IntegrationFlows
-import org.springframework.messaging.Message
 import org.springframework.messaging.MessageChannel
 import org.springframework.messaging.MessageHandler
-import org.springframework.messaging.support.GenericMessage
 import services.MessageErrorAdvice
+import java.util.*
 
 
 @Configuration
@@ -44,10 +45,15 @@ class AlgorithmCloudProcessorConfig {
     @Bean
     internal fun kafkaListenerFlow(
         @Qualifier("messageHandler") algorithmMessageHandler: MessageHandler,
-        messageErrorAdvice: MessageErrorAdvice
+        messageErrorAdvice: MessageErrorAdvice,
+        jsonToBaseAlgorithmTransformer: JsonToBaseAlgorithmTransformer,
+        algorithmTransformer: AlgorithmTransformer
     ): IntegrationFlow {
         return IntegrationFlows
             .from(Sink.INPUT)
+            .transform(jsonToBaseAlgorithmTransformer, java.util.function.Consumer { e -> e.advice(messageErrorAdvice).requiresReply(false) })
+            .filter(Objects::nonNull)
+            .transform(algorithmTransformer, java.util.function.Consumer { e -> e.advice(messageErrorAdvice).requiresReply(false) })
             .handle(algorithmMessageHandler) { e ->
                 e.advice(messageErrorAdvice).requiresReply(false)
             }
@@ -63,7 +69,7 @@ class AlgorithmCloudProcessorConfig {
     }
 
     @Bean
-    internal fun errorFlow(): IntegrationFlow {
+    internal fun errorFlow(): IntegrationFlow { //RABBIT NEXT
         return IntegrationFlows
             .from("errorQueue")
             .log<Any> { message ->

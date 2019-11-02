@@ -35,6 +35,7 @@ dependencies {
 	compile ("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.2")
 	testCompile ("com.willowtreeapps.assertk:assertk-jvm:0.20")
 	testCompile("com.nhaarman:mockito-kotlin:1.5.0")
+	testCompile("org.assertj:assertj-core:3.11.1")
 	implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
 	implementation("org.springframework.boot:spring-boot-starter-integration")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")

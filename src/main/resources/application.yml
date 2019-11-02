@@ -11,6 +11,9 @@ spring:
               deserializer: org.apache.kafka.common.serialization.StringDeserializer
             value:
               deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      rabbit:
+        binder:
+          admin-addresses: localhost:5672
       bindings:
         input:
           consumer:
@@ -19,3 +22,8 @@ spring:
           binder: kafka
           group: "dummy"
           destination: "algorithm_complete" #topic or exchange
+        output:
+          binder: rabbit
+          group: dummy
+          destination: errors
+

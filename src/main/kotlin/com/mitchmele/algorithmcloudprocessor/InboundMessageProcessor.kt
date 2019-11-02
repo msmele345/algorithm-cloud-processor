@@ -12,16 +12,19 @@ import java.util.concurrent.CountDownLatch
 class InboundMessageProcessor(
     private val mongoClient: MongoClient
 ) {
-    private val logger : Logger = LoggerFactory.getLogger(InboundMessageProcessor::class.java)
+    private val logger: Logger = LoggerFactory.getLogger(InboundMessageProcessor::class.java)
 
     private val latch: CountDownLatch = CountDownLatch(1)
 
     fun process(msg: Message<*>) {
         logger.info("received message='{}'", msg)
-        val algorithm = msg.payload as AlgorithmDomainModel
-        mongoClient.saveAlgorithm(algorithm)
+        try {
+            (msg.payload as AlgorithmDomainModel).let { algorithmDomainModel ->
+                mongoClient.saveAlgorithm(algorithmDomainModel)
+            }
+        } catch (e: Exception) {
+            throw RuntimeException("Error with processing")
+        }
         latch.countDown()
     }
 }
-
-//NEED TRANSFORMER FROM BASE TO ADM FIRST!
