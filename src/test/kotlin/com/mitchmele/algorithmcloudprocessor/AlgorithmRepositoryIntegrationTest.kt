@@ -15,12 +15,6 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner
 @Category(IntegrationTest::class)
 class AlgorithmRepositoryIntegrationTest {
 
-
-
-
-
-
-
     @Configuration
     @EnableMongoRepositories(basePackages = ["com.mitchmele.*"])
     class TestConfig : AbstractMongoConfiguration() {

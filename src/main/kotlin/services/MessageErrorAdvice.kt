@@ -1,5 +1,6 @@
 package services
 
+import com.fasterxml.jackson.databind.JsonMappingException
 import org.springframework.integration.core.MessagingTemplate
 import org.springframework.integration.handler.advice.AbstractRequestHandlerAdvice
 import org.springframework.integration.transformer.MessageTransformationException
@@ -19,13 +20,13 @@ class MessageErrorAdvice(
         return try {
             callback.execute()
         } catch (ex: MessageTransformationException) {
-            ex.cause?.let { transformationCause ->
+            ex.cause?.let { transformationCause -> //gives flexibility to throw custom exceptions and route to different error channels based of type
                 when (transformationCause) {
-                    is IOException -> {
+                    is IOException -> { // TODO create separate errors for IO exceptions from Mongo
                         val errorMessage = MessageBuilder
                             .withPayload(message.payload)
                             .copyHeadersIfAbsent(message.headers)
-                            .setHeader("errorMessage", ex.cause)
+                            .setHeader("errorMessage", ex.localizedMessage)
                             .build()
                         messagingTemplate.send(errorQueue, errorMessage)
                     }
@@ -33,13 +34,20 @@ class MessageErrorAdvice(
                         val errorMessage = MessageBuilder
                             .withPayload(message.payload)
                             .copyHeadersIfAbsent(message.headers)
-                            .setHeader("errorMessage", ex.cause)
+                            .setHeader("errorMessage", ex.localizedMessage)
                             .build()
                         messagingTemplate.send(errorQueue, errorMessage)
                     }
                 }
             }
             null
+        } catch (ex: ThrowableHolderException) {
+            val errorMessage = MessageBuilder
+                .withPayload(message.payload)
+                .copyHeadersIfAbsent(message.headers)
+                .setHeader("errorMessage", ex.localizedMessage)
+                .build()
+            messagingTemplate.send(errorQueue, errorMessage)
         }
     }
 }

@@ -3,15 +3,19 @@ package services
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
+import com.fasterxml.jackson.core.JsonParser
+import com.fasterxml.jackson.databind.JsonMappingException
+import com.fasterxml.jackson.databind.exc.MismatchedInputException
 import com.nhaarman.mockito_kotlin.*
 import org.assertj.core.api.Assertions
 import org.junit.Test
+import org.springframework.integration.handler.advice.AbstractRequestHandlerAdvice
 import org.springframework.integration.transformer.MessageTransformationException
 import org.springframework.messaging.Message
 import org.springframework.messaging.support.MessageBuilder
 import java.io.IOException
 
-class MessageErrorAdviceTest: MessageErrorAdvice(
+class MessageErrorAdviceTest : MessageErrorAdvice(
     messagingTemplate = mock(),
     errorQueue = mock()
 ) {
@@ -58,7 +62,7 @@ class MessageErrorAdviceTest: MessageErrorAdvice(
 
         val mockCallBack = mock<ExecutionCallback>()
 
-        whenever(mockCallBack.execute()) doAnswer  {
+        whenever(mockCallBack.execute()) doAnswer {
             throw MessageTransformationException(
                 "couldn't transform this",
                 RuntimeException("some runtime exception")
@@ -81,6 +85,7 @@ class MessageErrorAdviceTest: MessageErrorAdvice(
             isEqualTo("some payload")
         }
     }
+
     @Test
     fun `doInvoke - should return null and route the message to the errorQueue if the callback fails`() {
 
@@ -106,5 +111,30 @@ class MessageErrorAdviceTest: MessageErrorAdvice(
         verify(messagingTemplate).send(eq(errorQueue), captor.capture())
 
         Assertions.assertThat(actual).isNull()
+    }
+
+    @Test
+    fun `doInvoke - errorMessages should have condensed causes set in headers to pass to rabbit`() {
+        val inputMessage = MessageBuilder
+            .withPayload("bad message")
+            .setHeader("header1", "test 2")
+            .build()
+
+        val mockCallBack = mock<ExecutionCallback>()
+
+        whenever(mockCallBack.execute()) doAnswer {
+            throw MessageTransformationException("error", IOException("some io"))
+        }
+
+        val expectedHeaderValue = "error; nested exception is java.io.IOException: some io"
+
+        doInvoke(callback = mockCallBack, target = null, message = inputMessage)
+
+        argumentCaptor<Message<*>>().let { captor ->
+            verify(messagingTemplate).send(eq(errorQueue), captor.capture())
+
+            val causeInHeader = captor.firstValue.headers["errorMessage"]
+            assertThat(causeInHeader).isEqualTo(expectedHeaderValue)
+        }
     }
 }

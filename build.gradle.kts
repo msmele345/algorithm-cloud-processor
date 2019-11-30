@@ -33,6 +33,10 @@ dependencies {
 	compile ("org.jetbrains.kotlin:kotlin-test")
 	compile("com.fasterxml.jackson.module:jackson-module-kotlin")
 	compile ("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.2")
+
+	compile ("org.apache.logging.log4j:log4j-core:2.10.0")
+	compile ("org.apache.logging.log4j:log4j-api:2.10.0")
+
 	testCompile ("com.willowtreeapps.assertk:assertk-jvm:0.20")
 	testCompile("com.nhaarman:mockito-kotlin:1.5.0")
 	testCompile("org.assertj:assertj-core:3.11.1")

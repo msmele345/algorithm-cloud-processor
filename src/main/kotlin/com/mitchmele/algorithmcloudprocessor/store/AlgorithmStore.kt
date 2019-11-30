@@ -40,6 +40,5 @@ enum class CategoryDescription(val value: String) {
 
 interface AlgorithmClient {
     fun saveAlgorithm(algorithm: AlgorithmDomainModel) : com.mitchmele.algorithmcloudprocessor.result.Result<Unit, ServiceErrors>
-    fun findAlgorithmByName(algorithmName: String) : com.mitchmele.algorithmcloudprocessor.result.Result<AlgorithmDomainModel, ServiceErrors>
     fun deleteAlgorithmByName(algorithmName: String) : com.mitchmele.algorithmcloudprocessor.result.Result<Unit, ServiceErrors>
 }

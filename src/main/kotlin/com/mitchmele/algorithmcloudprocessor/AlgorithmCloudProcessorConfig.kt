@@ -14,6 +14,7 @@ import org.springframework.integration.config.EnableIntegration
 import org.springframework.integration.core.MessagingTemplate
 import org.springframework.integration.dsl.IntegrationFlow
 import org.springframework.integration.dsl.IntegrationFlows
+import org.springframework.messaging.Message
 import org.springframework.messaging.MessageChannel
 import org.springframework.messaging.MessageHandler
 import services.MessageErrorAdvice
@@ -38,9 +39,7 @@ class AlgorithmCloudProcessorConfig {
     @Bean("messageHandler")
     internal fun algorithmMessageHandler(
         processor: InboundMessageProcessor
-    ): MessageHandler = MessageHandler { message ->
-        processor.process(message)
-    }
+    ): MessageHandler = MessageHandler { message -> processor.process(message) }
 
     @Bean
     internal fun kafkaListenerFlow(
@@ -69,14 +68,14 @@ class AlgorithmCloudProcessorConfig {
     }
 
     @Bean
-    internal fun errorFlow(): IntegrationFlow { //RABBIT NEXT
+    internal fun errorFlow(): IntegrationFlow {
         return IntegrationFlows
             .from("errorQueue")
-            .log<Any> { message ->
-                println("EVENT ERROR: $message")
-                println("EVENT ERROR PAYLOAD: ${message.payload}")
-                println("EVENT ERROR HEADERS: ${message.headers}")
+            .log<Any> {
+                "Sending Message to ErrorQueue. ErrorMessage:" +
+                    " ${it.headers["errorMessage"].toString()}, Headers: ${it.headers}"
             }
+            .channel(AlgorithmCloudBinder.OUTPUT)
             .get()
     }
 }

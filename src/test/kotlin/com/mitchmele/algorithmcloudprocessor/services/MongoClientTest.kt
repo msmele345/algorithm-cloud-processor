@@ -68,4 +68,36 @@ class MongoClientTest {
             assertThat(result).isEqualTo(Failure(expected))
         }
     }
+
+
+    @Test
+    fun `deleteAlgorithmByName - should invoke the repository method delete by Id when called`() {
+
+        val incomingAlgorithmToDelete = AlgorithmDomainModel(
+            name = "badAlgo"
+        )
+
+        subject.deleteAlgorithmByName("badAlgo").let {
+            verify(mockRepo).deleteById("badAlgo")
+        }
+    }
+
+    @Test
+    fun `deleteAlgorithmByName - should return a failure with ServiceErrors if delete throws an exception`() {
+        val expected = serviceErrorOf(ServiceError(
+            service = ServiceName.MONGO,
+            errorMessage = "some exception with deleting",
+            errorType = ErrorType.UNKNOWN_ERROR
+        ))
+
+        val incomingAlgorithmToDelete = AlgorithmDomainModel(
+            name = "badAlgo"
+        )
+
+        whenever(mockRepo.deleteById(any())) doThrow RuntimeException("some exception with deleting")
+
+        subject.deleteAlgorithmByName("badAlgo").failsAnd { result ->
+            assertThat(result).isEqualTo(expected)
+        }
+    }
 }

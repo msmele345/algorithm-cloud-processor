@@ -40,20 +40,3 @@ class JsonToBaseAlgorithmTransformer(
         }
     }
 }
-
-
-/*
-*
-*     @Bean
-    internal fun errorFlow(): IntegrationFlow { //RABBIT NEXT
-        return IntegrationFlows
-            .from("errorQueue")
-            .log<Any> { message ->
-                println("EVENT ERROR: $message")
-                println("EVENT ERROR PAYLOAD: ${message.payload}")
-                println("EVENT ERROR HEADERS: ${message.headers}")
-            }
-            .get()
-    }
-*
-* */
