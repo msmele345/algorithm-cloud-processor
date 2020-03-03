@@ -1,4 +1,4 @@
-package com.mitchmele.algorithmcloudprocessor.result
+package com.mitchmele.algorithmcloudprocessor.common
 
 enum class ErrorType {
     INPUT_VALIDATION,

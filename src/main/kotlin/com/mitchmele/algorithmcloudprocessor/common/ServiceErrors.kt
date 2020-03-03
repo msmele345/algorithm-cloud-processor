@@ -1,4 +1,4 @@
-package com.mitchmele.algorithmcloudprocessor.result
+package com.mitchmele.algorithmcloudprocessor.common
 
 data class ServiceError(
     val service: ServiceName = ServiceName.UNKNOWN,

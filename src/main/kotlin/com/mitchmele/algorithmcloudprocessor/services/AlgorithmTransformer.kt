@@ -7,12 +7,13 @@ import com.mitchmele.algorithmcloudprocessor.store.Tag
 import com.mitchmele.algorithmcloudprocessor.utils.CategoryDescriptionMapper
 import org.springframework.integration.transformer.GenericTransformer
 import org.springframework.stereotype.Service
+import java.util.*
 
 
 @Service
-class AlgorithmTransformer : GenericTransformer<BaseAlgorithm, AlgorithmDomainModel> {
-
-    val mapper = CategoryDescriptionMapper()
+class AlgorithmTransformer(
+    val mapper: CategoryDescriptionMapper
+) : GenericTransformer<BaseAlgorithm, AlgorithmDomainModel> {
 
     override fun transform(source: BaseAlgorithm): AlgorithmDomainModel {
         return AlgorithmDomainModel(
@@ -26,15 +27,6 @@ class AlgorithmTransformer : GenericTransformer<BaseAlgorithm, AlgorithmDomainMo
         )
     }
 
-    fun parseCategoryInfo(source: BaseAlgorithm): List<Tag> {
-        val listOfCategoryNames = listOf("Strings", "Collections", "Numbers", "Sorting", "Processing", "Data formatting")
-
-        val names = source.name.split("(?=[A-Z])")
-        println(names)
-
-        return emptyList()
-
-    }
     fun setDifficultyLevel(str: String): Int {
         return when (str) {
             "EASY" -> 2

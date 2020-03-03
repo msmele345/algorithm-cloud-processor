@@ -3,7 +3,7 @@ spring:
     stream:
       defaultBinder: kafka
       kafka:
-        binder:
+        binder: #connection details for the messsge broker of choice
           brokers: localhost:9092
           autoCreateTopics: false
           consumerProperties:
@@ -26,5 +26,9 @@ spring:
           binder: rabbit
           group: dummy
           destination: errors
+        dbErrorOutput:
+          binder: rabbit
+          group: dummy
+          destination: dbErrors
 
 

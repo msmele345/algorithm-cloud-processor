@@ -32,6 +32,10 @@ class AlgorithmCloudProcessorConfig {
     internal fun errorQueue() = DirectChannel()
 
     @Bean
+    @Qualifier("mongoDbErrorQueue")
+    internal fun mongoDbErrorQueue() = DirectChannel()
+
+    @Bean
     internal fun messagingTemplate(): MessagingTemplate {
         return MessagingTemplate()
     }
@@ -62,9 +66,10 @@ class AlgorithmCloudProcessorConfig {
     @Bean
     internal fun messageErrorAdvice(
         @Qualifier("errorQueue") errorQueue: MessageChannel,
+        @Qualifier("mongoDbErrorQueue") mongoDbErrorQueue: MessageChannel,
         messagingTemplate: MessagingTemplate
     ): MessageErrorAdvice {
-        return MessageErrorAdvice(messagingTemplate, errorQueue)
+        return MessageErrorAdvice(messagingTemplate, errorQueue, mongoDbErrorQueue)
     }
 
     @Bean
@@ -77,5 +82,18 @@ class AlgorithmCloudProcessorConfig {
             }
             .channel(AlgorithmCloudBinder.OUTPUT)
             .get()
+    }
+
+    @Bean
+    internal fun mongoErrorFlow(): IntegrationFlow {
+        return IntegrationFlows
+            .from("mongoDbErrorQueue")
+            .log<Any> {
+                "Sending Message to MongoErrorQueue. ErrorMessage:" +
+                    " ${it.headers["errorMessage"].toString()}, Headers: ${it.headers}"
+            }
+            .channel(AlgorithmCloudBinder.DB_ERROR_OUTPUT)
+            .get()
+
     }
 }

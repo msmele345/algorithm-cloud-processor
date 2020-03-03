@@ -1,4 +1,4 @@
-package com.mitchmele.algorithmcloudprocessor.result
+package com.mitchmele.algorithmcloudprocessor.common
 
 
 sealed class Result<out SuccessType, out FailureType>

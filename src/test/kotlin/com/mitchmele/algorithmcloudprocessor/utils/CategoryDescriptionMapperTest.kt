@@ -1,6 +1,7 @@
 package com.mitchmele.algorithmcloudprocessor.utils
 
 import com.mitchmele.algorithmcloudprocessor.store.Tag
+import org.assertj.core.api.Assertions.`in`
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import org.junit.experimental.categories.Category
@@ -9,7 +10,6 @@ import org.junit.experimental.categories.Category
 class CategoryDescriptionMapperTest {
 
     val subject = CategoryDescriptionMapper()
-
 
     @Test
     fun `mapDescription - should map a category name to a list of corresponding tags`() {
@@ -32,6 +32,21 @@ class CategoryDescriptionMapperTest {
 
         val expected = emptyList<Tag>()
         subject.mapDescription(inputName).let { actual ->
+            assertThat(actual).isEqualTo(expected)
+        }
+    }
+
+    @Test
+    fun `mapDescription - should return a list of tags related to Numbers case insensitive`() {
+        val input = "numbers"
+        val expected = listOf(
+            Tag("Math"),
+            Tag("Puzzles"),
+            Tag("Sequences"),
+            Tag("Indexes")
+        )
+
+        subject.mapDescription(input).let { actual ->
             assertThat(actual).isEqualTo(expected)
         }
     }

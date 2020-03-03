@@ -1,4 +1,4 @@
-package com.mitchmele.algorithmcloudprocessor.result
+package com.mitchmele.algorithmcloudprocessor.common
 
 import kotlin.test.fail
 

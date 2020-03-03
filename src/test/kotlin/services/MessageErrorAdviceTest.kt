@@ -6,6 +6,7 @@ import assertk.assertions.*
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.databind.exc.MismatchedInputException
+import com.mitchmele.algorithmcloudprocessor.common.MongoDbProcessingException
 import com.nhaarman.mockito_kotlin.*
 import org.assertj.core.api.Assertions
 import org.junit.Test
@@ -17,7 +18,8 @@ import java.io.IOException
 
 class MessageErrorAdviceTest : MessageErrorAdvice(
     messagingTemplate = mock(),
-    errorQueue = mock()
+    errorQueue = mock(),
+    mongoDbErrorQueue = mock()
 ) {
 
     @Test
@@ -135,6 +137,52 @@ class MessageErrorAdviceTest : MessageErrorAdvice(
 
             val causeInHeader = captor.firstValue.headers["errorMessage"]
             assertThat(causeInHeader).isEqualTo(expectedHeaderValue)
+        }
+    }
+
+    @Test
+    fun `doInvoke - errorMessages that contain MongoDbProcessingExceptions should be routed to the mongoDb error queue`() {
+        val inputMessage = MessageBuilder
+            .withPayload("bad message")
+            .setHeader("header1", "mongo error")
+            .build()
+
+        val mockCallBack: ExecutionCallback = mock {
+            on { execute() } doAnswer {
+                throw MessageTransformationException(
+                    "error",
+                    MongoDbProcessingException("Processing Error with MongoDb", RuntimeException("some bad happened when writing to mongo"))
+                )
+            }
+        }
+
+        doInvoke(mockCallBack, target = null, message = inputMessage)
+
+        val captor = argumentCaptor<Message<*>>()
+
+        verify(messagingTemplate).send(eq(mongoDbErrorQueue), captor.capture())
+    }
+
+    @Test
+    fun `doInvoke - errorMessages that contain MongoDbProcessingExceptions should contain headers containing the underlying cause`() {
+
+        val inputMessage = MessageBuilder
+            .withPayload("bad message")
+            .setHeader("header1", "mongo error")
+            .build()
+
+        val expectedCause = "some mongo error"
+        val mockCallBack = mock<ExecutionCallback>()
+
+        whenever(mockCallBack.execute()) doAnswer {
+            throw MessageTransformationException("error", MongoDbProcessingException("some mongo error", RuntimeException("mongo failed")))
+        }
+        doInvoke(mockCallBack, target = null, message = inputMessage)
+
+        argumentCaptor<Message<*>>().let { captor ->
+            verify(messagingTemplate).send(eq(mongoDbErrorQueue), captor.capture())
+            assertThat(captor.firstValue.headers["errorMessage"])
+                .isEqualTo(expectedCause)
         }
     }
 }

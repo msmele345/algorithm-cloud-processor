@@ -4,16 +4,18 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import com.mitchmele.algorithmcloudprocessor.mongodb.AlgorithmMongoRepository
-import com.mitchmele.algorithmcloudprocessor.result.*
+import com.mitchmele.algorithmcloudprocessor.common.*
 import com.mitchmele.algorithmcloudprocessor.store.AlgorithmDomainModel
+import com.mitchmele.algorithmcloudprocessor.store.AlgorithmDomainModels
+import com.mitchmele.algorithmcloudprocessor.store.Category
 import com.mitchmele.algorithmcloudprocessor.store.Tag
 import com.mitchmele.algorithmcloudprocessor.utils.UnitTest
 import com.nhaarman.mockito_kotlin.*
 import org.junit.Test
-import org.junit.experimental.categories.Category
+import org.junit.experimental.categories.Category as TestCategory
 import java.lang.RuntimeException
 
-@Category(UnitTest::class)
+@TestCategory(UnitTest::class)
 class MongoClientTest {
 
     val mockRepo: AlgorithmMongoRepository = mock()
@@ -32,6 +34,30 @@ class MongoClientTest {
         )
     )
 
+    val mockAlgorithmDomainModel = AlgorithmDomainModel(
+        name = "countDupes",
+        codeSnippet = """
+            fun countDupes(arr: Array<Int>): Int = arr.size - arr.distinct()
+        """.trimIndent(),
+        category = Category(
+            categoryDescription = "EASY",
+            difficultyLevel = 2,
+            tags = listOf(Tag("Collections"))
+        ),
+        isSolved = false
+    )
+
+    val mockAlgorithmDomainModel2 = AlgorithmDomainModel(
+        name = "some algo",
+        codeSnippet = """
+            fun someAlgo(arr: Array<Int>): Int = -1
+        """.trimIndent(),
+        category = Category(
+            categoryDescription = "EASY",
+            difficultyLevel = 2,
+            tags = listOf(Tag("Random"))
+        )
+    )
 
     @Test
     fun `saveAlgorithm - should call the repository to retrieve an algorithm`() {
@@ -99,5 +125,43 @@ class MongoClientTest {
         subject.deleteAlgorithmByName("badAlgo").failsAnd { result ->
             assertThat(result).isEqualTo(expected)
         }
+    }
+
+    @Test
+    fun `loadAllAlgorithms - success - should call the repo method findAll`() {
+
+        whenever(mockRepo.findAll()) doReturn listOf(mockAlgorithmDomainModel, mockAlgorithmDomainModel2)
+
+        val actual = subject.loadAllAlgorithms()
+        verify(mockRepo).findAll()
+    }
+
+
+    @Test
+    fun `loadAllAlgorithms - success - should return a list of AlgorithmDomainModels from mongo db`() {
+
+        whenever(mockRepo.findAll()) doReturn listOf(mockAlgorithmDomainModel, mockAlgorithmDomainModel2)
+
+        subject.loadAllAlgorithms().let { actual ->
+            assertThat(actual).isEqualTo(Success(AlgorithmDomainModels(listOf(
+                mockAlgorithmDomainModel,
+                mockAlgorithmDomainModel2
+            ))))
+        }
+    }
+
+    @Test
+    fun `loadAllAlgorithms - failure - should return a ServiceError if findAll fails`() {
+
+        val expected = serviceErrorOf(ServiceError(
+            service = ServiceName.MONGO,
+            errorMessage = "some error",
+            errorType = ErrorType.UNKNOWN_ERROR
+        ))
+
+        whenever(mockRepo.findAll()) doThrow RuntimeException("some error")
+
+        val actual = subject.loadAllAlgorithms()
+        assertThat(actual).isEqualTo(Failure(expected))
     }
 }

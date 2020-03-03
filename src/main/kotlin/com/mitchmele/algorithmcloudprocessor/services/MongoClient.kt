@@ -1,9 +1,10 @@
 package com.mitchmele.algorithmcloudprocessor.services
 
 import com.mitchmele.algorithmcloudprocessor.mongodb.AlgorithmMongoRepository
-import com.mitchmele.algorithmcloudprocessor.result.*
+import com.mitchmele.algorithmcloudprocessor.common.*
 import com.mitchmele.algorithmcloudprocessor.store.AlgorithmClient
 import com.mitchmele.algorithmcloudprocessor.store.AlgorithmDomainModel
+import com.mitchmele.algorithmcloudprocessor.store.AlgorithmDomainModels
 import org.springframework.stereotype.Service
 import java.lang.Exception
 
@@ -39,6 +40,16 @@ class MongoClient(
             )))
         }
     }
-}
 
-//need to return null if there is an error
+    override fun loadAllAlgorithms(): Result<AlgorithmDomainModels, ServiceErrors> {
+        return try {
+            Success(AlgorithmDomainModels(mongoRepository.findAll()))
+        } catch (e: Exception) {
+            Failure(serviceErrorOf(ServiceError(
+                service = ServiceName.MONGO,
+                errorMessage = e.localizedMessage,
+                errorType = ErrorType.UNKNOWN_ERROR
+            )))
+        }
+    }
+}
