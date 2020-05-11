@@ -25,8 +25,13 @@ class InboundMessageProcessor(
 
         try {
             mongoValidationService.validate(incomingAlgorithmDomainModel).let { checkPasses ->
-                if (checkPasses) {
-                    mongoClient.saveAlgorithm(incomingAlgorithmDomainModel)
+                when {
+                    checkPasses -> {
+                        mongoClient.saveAlgorithm(incomingAlgorithmDomainModel)
+                    }
+                    else -> {
+                        logger.info("did not write duplicate message='{}'", msg.payload)
+                    }
                 }
             }
 
@@ -34,11 +39,5 @@ class InboundMessageProcessor(
             throw MongoDbProcessingException(e.localizedMessage, e)
         }
         latch.countDown()
-    }
-
-
-    fun Message<*>.checkIfUnique(name: String): Boolean {
-        val algorithmName = (this.payload as AlgorithmDomainModel).name
-        return algorithmName.toLowerCase() == name.toLowerCase()
     }
 }
